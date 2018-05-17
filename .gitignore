@@ -7,3 +7,4 @@ client/dev/.DS_Store
 client/dev/components/.DS_Store
 styles/.DS_Store
 bundle.js
+client/dist/bundle.js

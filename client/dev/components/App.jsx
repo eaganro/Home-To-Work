@@ -14,56 +14,7 @@ export default class App extends React.Component {
     this.state = {
 
       // resultList is populated with dummy data on loadup
-      resultList: [{
-        prices: 2000,
-        addresses: 'addresses',
-        images: 'http://www.fordhamroadbid.org/wp-content/uploads/2015/11/New-York.jpg',
-        walking: '5 minutes',
-        driving: '3 minutes',
-        transit: '4 minutes',
-        markerVis: false,
-        favorite: false,
-      },
-      {
-        prices: 2000,
-        addresses: 'addresses2',
-        images: 'http://www.fordhamroadbid.org/wp-content/uploads/2015/11/New-York.jpg',
-        walking: '10 minutes',
-        driving: '4 minutes',
-        transit: '6 minutes',
-        markerVis: false,
-        favorite: false,
-      },
-      {
-        prices: 1500,
-        addresses: 'addresses2',
-        images: 'http://www.fordhamroadbid.org/wp-content/uploads/2015/11/New-York.jpg',
-        walking: '10 minutes',
-        driving: '4 minutes',
-        transit: '6 minutes',
-        markerVis: false,
-        favorite: false,
-      },
-      {
-        prices: 1500,
-        addresses: 'addresses2',
-        images: 'http://www.fordhamroadbid.org/wp-content/uploads/2015/11/New-York.jpg',
-        walking: '10 minutes',
-        driving: '4 minutes',
-        transit: '6 minutes',
-        markerVis: false,
-        favorite: false,
-      },
-      {
-        prices: 1700,
-        addresses: 'addresses3',
-        images: 'http://www.fordhamroadbid.org/wp-content/uploads/2015/11/New-York.jpg',
-        walking: '15 minutes',
-        driving: '6 minutes',
-        transit: '8 minutes',
-        markerVis: false,
-        favorite: false,
-      }],
+      resultList: [],
       // adding a list to show user's favorites
       favList: [],
       // setting state to show fav list vs result list
@@ -75,6 +26,17 @@ export default class App extends React.Component {
       longitude: -73.978641,
       hLatLong: [{ lat: 40.750611, lng: -73.978641 }],
       mapList: [{ addresses: 'addresses', prices: 2000, driving: 'Your Work', hLatLong: { lat: 40.7484, lng: -73.9857 }, vis: false }],
+      
+      images: [
+        'http://www.cagedesigngroup.com/wp-content/uploads/2016/11/great-apartment-design-ideas-apartment-design-ideas-interior-home-design-and-decor.jpg',
+        'http://cdn.home-designing.com/wp-content/uploads/2018/03/Small-tufted-back-sofa-300x250.jpg',
+        'https://cdn.freshome.com/wp-content/uploads/2012/10/bes-small-apartments-designs-ideas-image-17.jpg',
+        'http://boshdesigns.com/wp-content/uploads/2017/06/contemporary-apartment-interior-design-inspiration-.jpg',
+        'https://cdn.decoist.com/wp-content/uploads/2013/10/Stylish-German-Apartment-by-Alexander-Zenzura.jpg',
+        'http://cuantarzon.com/wp-content/uploads/2017/07/interior-design-for-apartments-entrancing-design-ecfceabeecaa-home-interior-interior-architecture.jpg',
+        'https://static.dezeen.com/uploads/2017/05/tadao-ando-new-york-apartment-interior-152-elizabeth-street-gabellini-sheppard_dezeen_7-852x505.jpg',
+        'http://www.fordhamroadbid.org/wp-content/uploads/2015/11/New-York.jpg',
+      ],
       // mapList is what contains the values (lat and lng) necessary to render markers on the GoogleMaps.jsx
       // index 0 of mapList will be the "center" for google maps, dummy data initially, but gets updated with
       // users's work data once the user makes a search
@@ -102,21 +64,24 @@ export default class App extends React.Component {
   // before pack data, the data is an array of arrays, i.e. data = [[addresses], [lat], [prices] ... etc]
   // All packData() does is make it so that data looks something like data = [{address1, lat1, price1}, {address2, lat2, price2}...]
   packData({
-    prices, addresses, images, transit, driving, walking, hLatLong,
+    prices, addresses, images, transit, driving, hLatLong,
   }) {
     const temp = [];
+    console.log(hLatLong);
     for (let i = 0; i < hLatLong.length; i += 1) {
-      const obj = {
-        id: i,
-        prices: prices[i],
-        addresses: addresses[i],
-        images: (images[i].slice(0, 4) === 'http') ? images[i] : 'http://www.fordhamroadbid.org/wp-content/uploads/2015/11/New-York.jpg',
-        driving: driving[i],
-        transit: transit[i],
-        hLatLong: hLatLong[i],
-        favorite: false,
-      };
-      temp.push(obj);
+      if (driving[i].indexOf('hour') === -1 && transit[i].indexOf('hour') === -1) {
+        const obj = {
+          id: i,
+          prices: +prices[i].split('').filter(c => c !== ',').join(''),
+          addresses: addresses[i],
+          images: (images[i] && images[i].slice(0, 4) === 'http') ? images[i] : this.state.images[Math.floor(Math.random() * 8)],
+          driving: driving[i],
+          transit: transit[i],
+          hLatLong: hLatLong[i],
+          favorite: false,
+        };
+        temp.push(obj);
+      }
     }
 
     axios.post('/checkfavs', {
@@ -143,7 +108,8 @@ export default class App extends React.Component {
     this.setState({ loading: true });
     axios.post('/zillow', { zip, userAddress })
       .then((res) => {
-        const mapListObj = { addresses: userAddress, prices: 'this is your work', hLatLong: res.data.jLatLong, vis: false };
+        console.log(res);
+        const mapListObj = { addresses: userAddress, prices: 'this is your work', hLatLong: res.data.hLatLong, vis: false };
         // mapListObj is the user's "Work address", aka what the user inputs into the search bar
         // temppArray then overwrites the dummy data in mapList and fMapList
         // so that the user's work marker will always be showing
@@ -152,9 +118,11 @@ export default class App extends React.Component {
         // make sure we are sending back data in an array, send this array to pack data
         this.setState(
           {
+            latitude: res.data.jLatLong.lat,
+            longitude: res.data.jLatLong.lng,
             loading: false,
             mapList: temppArray,
-            fMapList: temppArray
+            fMapList: temppArray,
           },
           () => {
             this.packData(res.data);
@@ -180,6 +148,7 @@ export default class App extends React.Component {
       vis: false,
       favorite: this.state.showFavs ? this.state.showFavs : false,
     };
+    console.log(tempObj);
     const anotherTempArray = this.state.showFavs ? this.state.fMapList : this.state.mapList;
     const found = { exist: false, index: null };
     for (let i = 0; i < anotherTempArray.length; i += 1) {
@@ -266,21 +235,42 @@ export default class App extends React.Component {
 
   // Sort the results based on what sort button was clicked
   sortData(type) {
-    let list = this.state.resultList;
+    const list = this.state.resultList;
     this.setState({
       resultList: [],
     }, () => {
       if (type === 1) {
         this.setState({
-          resultList: list.sort((a, b) => a.prices - b.prices),
+          resultList: list.sort((a, b) => {
+            if (a.prices < b.prices) {
+              return -1;
+            } else if (a.prices > b.prices) {
+              return 1;
+            }
+            return 0;
+          }),
         });
       } else if (type === 2) {
         this.setState({
-          resultList: list.sort((a, b) => parseInt(a.transit, 10) - parseInt(b.transit, 10)),
+          resultList: list.sort((a, b) => {
+            if (parseInt(a.transit, 10) < parseInt(b.transit, 10)) {
+              return -1;
+            } else if (parseInt(a.transit, 10) < parseInt(b.transit, 10)) {
+              return 1;
+            }
+            return 0;
+          }),
         });
       } else if (type === 3) {
         this.setState({
-          resultList: list.sort((a, b) => parseInt(a.driving, 10) - parseInt(b.driving, 10)),
+          resultList: list.sort((a, b) => {
+            if (parseInt(a.driving, 10) < parseInt(b.driving, 10)) {
+              return -1;
+            } else if (parseInt(a.driving, 10) > parseInt(b.driving, 10)) {
+              return 1;
+            }
+            return 0;
+          }),
         });
       }
     });
@@ -386,14 +376,14 @@ export default class App extends React.Component {
                   isMarkerShown
                   resultList={this.state.resultList}
                   handleMarkerClick={this.handleMarkerClick}
-                  googleMapURL="https://maps.googleapis.com/maps/api/js?key=YOUR API KEY&v=3.exp&libraries=geometry,drawing,places"
+                  googleMapURL="https://maps.googleapis.com/maps/api/js?key=AIzaSyDNlHntx-Cjnpq1TNvKneoyKzBHSZqdBkg&v=3.exp&libraries=geometry,drawing,places"
                   loadingElement={<div style={{ height: '100%' }} />}
                   containerElement={<div style={{ height: '83.33vh' }} />}
                   mapElement={<div style={{ height: '100%' }} />}
                   mapList={this.state.showFavs ? this.state.fMapList : this.state.mapList}
                   latitude={this.state.latitude}
                   longitude={this.state.longitude}
-                  key="YOUR API KEY"
+                  key="AIzaSyDNlHntx-Cjnpq1TNvKneoyKzBHSZqdBkg"
                 />
               </div>
             </div> :
