@@ -1,8 +1,10 @@
 const mysql = require('mysql');
+const config = require('./config.js');
 
 const connection = mysql.createConnection({
   host: process.env.RDS_HOSTNAME || 'localhost',
   user: process.env.RDS_USERNAME || 'root',
+  password: config.password,
   database: process.env.RDS_DB_NAME || 'search',
 });
 

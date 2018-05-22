@@ -3,8 +3,26 @@ const parser = require('body-parser');
 const mysql = require('mysql');
 const axios = require('axios');
 const request = require('request');
+const CronJob = require('cron').CronJob;
 const cheerio = require('cheerio');
 const dbhelper = require('../database/dbhelpers.js');
+
+let zipKey = ''
+
+axios.get('https://www.zipcodeapi.com/API#radius').then((data) => {
+  let $ = cheerio.load(data.data);
+  zipKey = $('input[name="api_key"]').val();
+  console.log('ZIPPPP KEYY', zipKey);
+});
+
+new CronJob('40 06 18 * * 0-6', function() {
+  axios.get('https://www.zipcodeapi.com/API#radius').then((data) => {
+    let $ = cheerio.load(data.data);
+    zipKey = $('input[name="api_key"]').val() + 'gf';
+  });
+}, null, true, 'America/Los_Angeles');
+
+
 const app = express();
 
 app.use(parser.json());
@@ -49,6 +67,7 @@ app.post('/zillow', (req, res) => {
 
   const makeRentRequest = (rentUrl, resolve) => {
     request(rentUrl, (error, response, html) => {
+      console.log(html);
       const $ = cheerio.load(html);
       const priceAddress = $("div[class='_14vxS _14vxS']");
       const addressCheerio = $("a[class='_1YEFs _1YEFs _3g223 _3g223']");
@@ -89,8 +108,8 @@ app.post('/zillow', (req, res) => {
     });
   };
 
-  const zipUrl = `https://www.zipcodeapi.com/rest/${'aeid254Ds6YNBT4DHPrswjau7XLLvdnm1ePGOfeqYpj1f9cyN7WzO6kvh2SFTUa1'}/radius.json/${inputZip}/1/km`;
-
+  const zipUrl = `https://www.zipcodeapi.com/rest/${zipKey}/radius.json/${inputZip}/1/km`;
+  console.log('Zip URL', zipUrl);
   request(zipUrl, (error, response, responseData) => {
     const data = JSON.parse(responseData);
     const zipCodes = data.zip_codes.map(x => x.zip_code);
@@ -347,9 +366,9 @@ app.post('/dfavs', (req, res) => {
   });
 });
 
-let port = process.env.PORT || 3306;
+let port = 3300;
 
-app.listen((process.env.PORT || 3306), () => {
+app.listen((port), () => {
   console.log(`listening on port ${port}`);
 });
 
