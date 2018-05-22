@@ -66,11 +66,11 @@ app.post('/zillow', (req, res) => {
 
 
   const makeRentRequest = (rentUrl, resolve) => {
+    console.log(rentUrl)
     request(rentUrl, (error, response, html) => {
-      console.log(html);
       const $ = cheerio.load(html);
-      const priceAddress = $("div[class='_14vxS _14vxS']");
-      const addressCheerio = $("a[class='_1YEFs _1YEFs _3g223 _3g223']");
+      const priceAddress = $("div[class='_14vxS']");
+      const addressCheerio = $("a[class='_1YEFs _3g223']");
       if (prices.length < 20) {
         priceAddress.each(((i, adr) => {
           let price = $(adr).children().first().html();
@@ -86,6 +86,7 @@ app.post('/zillow', (req, res) => {
           links.push(`rent.com${$(adr).attr('href')}`);
           addresses.push($(adr).text());
         });
+        console.log(addresses);
       }
       resolve(1);
     });
@@ -128,10 +129,11 @@ app.post('/zillow', (req, res) => {
     Promise.all(rentP).then(() => {
       const drivingP = [];
       const transitP = [];
-
+      console.log(addresses);
       for (let i = 0; i < addresses.length; i += 1) {
         const mapsDrivingUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${`${addresses[i]}+${inputZip}`}&destination=${workAddress}&key=${'AIzaSyDNlHntx-Cjnpq1TNvKneoyKzBHSZqdBkg'}&mode=driving`;
         const mapsTransitUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${`${addresses[i]}+${inputZip}`}&destination=${workAddress}&key=${'AIzaSyDNlHntx-Cjnpq1TNvKneoyKzBHSZqdBkg'}&mode=transit`;
+        console.log(mapsDrivingUrl);
         const drive = new Promise((resolve) => {
           makeMapRequest(mapsDrivingUrl, resolve, true);
         });

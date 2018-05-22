@@ -69,7 +69,7 @@ export default class App extends React.Component {
     const temp = [];
     console.log(hLatLong);
     for (let i = 0; i < hLatLong.length; i += 1) {
-      if (driving[i].indexOf('hour') === -1 && transit[i].indexOf('hour') === -1) {
+      if (driving[i] && driving[i].indexOf('hour') === -1 && transit[i] && transit[i].indexOf('hour') === -1) {
         const obj = {
           id: i,
           prices: +prices[i].split('').filter(c => c !== ',').join(''),
